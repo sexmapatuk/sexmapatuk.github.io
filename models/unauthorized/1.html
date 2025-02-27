@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Фотогалерея</title>
     
-    <!-- Подключаем Fancybox CSS и JS -->
     <link rel="stylesheet" href="https://sexmapatuk.github.io/apps/fancybox/fancybox.css"/>
     <style>
         .gallery {
@@ -27,25 +26,56 @@
     </style>
 </head>
 <body>
-    <div class="gallery">
-        <!-- Пример структуры для одного изображения -->
-        <a href="путь_к_большому_изображению.jpg" 
-           data-fancybox="gallery" 
-           data-caption="Описание фото">
-            <img src="путь_к_превью.jpg" class="gallery-item" alt="Описание фото">
-        </a>
-        <!-- Добавьте больше изображений по такому же шаблону -->
-    </div>
+    <div class="gallery" id="gallery"></div>
 
     <script src="https://sexmapatuk.github.io/apps/fancybox/fancybox.umd.js"></script>
     <script>
-        // Инициализация Fancybox
-        Fancybox.bind("[data-fancybox]", {
-            // Опции Fancybox
-            loop: true,
-            wheel: false,
-            // Добавьте другие опции по необходимости
-        });
+        const galleryContainer = document.getElementById('gallery');
+        const baseImagePath = '/res/images/models/unauthorized/1/';
+        
+        async function loadGallery() {
+            try {
+                const response = await fetch(baseImagePath);
+                if (!response.ok) throw new Error('Failed to load images');
+                
+                const files = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(files, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'))
+                    .filter(a => a.href.match(/\.(jpg|jpeg|png|gif)$/i));
+
+                links.forEach(link => {
+                    const fileName = link.href.split('/').pop();
+                    const fullImagePath = baseImagePath + fileName;
+                    
+                    const anchor = document.createElement('a');
+                    anchor.href = fullImagePath;
+                    anchor.setAttribute('data-fancybox', 'gallery');
+                    
+                    const img = document.createElement('img');
+                    img.src = fullImagePath;
+                    img.className = 'gallery-item';
+                    img.alt = fileName;
+                    
+                    anchor.appendChild(img);
+                    galleryContainer.appendChild(anchor);
+                });
+
+                Fancybox.bind("[data-fancybox]", {
+                    loop: true,
+                    wheel: false,
+                });
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                galleryContainer.innerHTML = 'Ошибка загрузки галереи';
+            }
+        }
+
+        // Загружаем галерею при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadGallery);
+
+        // Обновляем галерею каждые 5 минут
+        setInterval(loadGallery, 300000);
     </script>
 </body>
 </html>
