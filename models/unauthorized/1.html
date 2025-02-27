@@ -31,22 +31,38 @@
     <script src="https://sexmapatuk.github.io/apps/fancybox/fancybox.umd.js"></script>
     <script>
         const galleryContainer = document.getElementById('gallery');
-        const baseImagePath = '/res/images/models/unauthorized/1/';
-        
+        const paths = [
+            'https://sexmapatuk.github.io/res/images/models/unauthorized/1/',
+            '/res/images/models/unauthorized/1/'
+        ];
+
+        async function checkImage(path, fileName) {
+            const img = new Image();
+            return new Promise((resolve) => {
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = path + fileName;
+            });
+        }
+
         async function loadGallery() {
             try {
-                const response = await fetch(baseImagePath);
-                if (!response.ok) throw new Error('Failed to load images');
+                galleryContainer.innerHTML = '';
+                const validImages = new Set();
                 
-                const files = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(files, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a'))
-                    .filter(a => a.href.match(/\.(jpg|jpeg|png|gif)$/i));
+                for(let i = 6000; i <= 9999; i++) {
+                    const fileName = `IMG_${i}.jpg`;
+                    
+                    for(const basePath of paths) {
+                        if(await checkImage(basePath, fileName)) {
+                            validImages.add(fileName);
+                            break;
+                        }
+                    }
+                }
 
-                links.forEach(link => {
-                    const fileName = link.href.split('/').pop();
-                    const fullImagePath = baseImagePath + fileName;
+                validImages.forEach(fileName => {
+                    const fullImagePath = paths[0] + fileName;
                     
                     const anchor = document.createElement('a');
                     anchor.href = fullImagePath;
@@ -56,6 +72,7 @@
                     img.src = fullImagePath;
                     img.className = 'gallery-item';
                     img.alt = fileName;
+                    img.loading = 'lazy';
                     
                     anchor.appendChild(img);
                     galleryContainer.appendChild(anchor);
@@ -71,10 +88,7 @@
             }
         }
 
-        // Загружаем галерею при загрузке страницы
         document.addEventListener('DOMContentLoaded', loadGallery);
-
-        // Обновляем галерею каждые 5 минут
         setInterval(loadGallery, 300000);
     </script>
 </body>
