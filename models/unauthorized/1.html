@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фотогалерея</title>
+    
+    <!-- Подключаем Fancybox CSS и JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.css"/>
+    <style>
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .gallery-item {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery">
+        <!-- Пример структуры для одного изображения -->
+        <a href="путь_к_большому_изображению.jpg" 
+           data-fancybox="gallery" 
+           data-caption="Описание фото">
+            <img src="путь_к_превью.jpg" class="gallery-item" alt="Описание фото">
+        </a>
+        <!-- Добавьте больше изображений по такому же шаблону -->
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@4/dist/fancybox.umd.js"></script>
+    <script>
+        // Инициализация Fancybox
+        Fancybox.bind("[data-fancybox]", {
+            // Опции Fancybox
+            loop: true,
+            wheel: false,
+            // Добавьте другие опции по необходимости
+        });
+    </script>
+</body>
+</html>
