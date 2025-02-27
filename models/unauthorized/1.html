@@ -121,18 +121,20 @@
     </style>
 </head>
 <body>
-        <header class="header">
-        <div class="logo">SexMap</div>
+    <header class="header">
+        <div class="logo">Marrati</div>
         <nav class="nav-menu" id="nav-menu">
-            <a href="#" class="nav-link">Главная</a>
-            <a href="#" class="nav-link">Галерея</a>
-            <a href="#" class="nav-link">О нас</a>
-            <a href="#" class="nav-link">Контакты</a>
+            <a href="https://sexmapatuk.github.io/" class="nav-link">Главная</a>
+            <a href="#" class="nav-link">Ассистент [в разработке]</a>
+            <a href="https://sexmapatuk.github.io/about.html" class="nav-link">О нас</a>
         </nav>
         <div class="mobile-menu-btn" id="mobile-menu-btn">☰</div>
     </header>
+    
+    <div class="main">
+    <div class="gallery" id="gallery"></div>
 
-        <script>
+    <script>
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const navMenu = document.getElementById('nav-menu');
 
@@ -141,10 +143,7 @@
             mobileMenuBtn.textContent = navMenu.classList.contains('active') ? '✕' : '☰';
         });
     </script>
-    
-    <div class="main">
-    <div class="gallery" id="gallery"></div>
-
+        
     <script src="https://sexmapatuk.github.io/apps/fancybox/fancybox.umd.js"></script>
     <script>
         const galleryContainer = document.getElementById('gallery');
