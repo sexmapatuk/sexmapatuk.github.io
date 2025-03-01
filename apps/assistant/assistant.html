@@ -334,10 +334,7 @@ async function generateText(prompt) {
             },
             body: JSON.stringify({
                 messages: [
-                    { 
-                        role: 'system', 
-                        content: 'You are a helpful assistant. When providing code examples, wrap them in triple backticks (```). Format your responses clearly and maintain proper spacing.' 
-                    },
+                    { role: 'system', content: 'You are a helpful assistant.' },
                     { role: 'user', content: prompt }
                 ],
                 model: 'mistral',
@@ -350,14 +347,48 @@ async function generateText(prompt) {
         }
 
         const data = await response.json();
-        let assistantResponse = data.choices?.[0]?.message?.content || 
-                              data.response || 
-                              (typeof data === 'string' ? data : 'Извините, я не смог корректно обработать ответ.');
+        
+        // Проверяем структуру ответа и извлекаем текст
+        let assistantResponse;
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+            assistantResponse = data.choices[0].message.content;
+        } else if (data.response) {
+            assistantResponse = data.response;
+        } else if (typeof data === 'string') {
+            assistantResponse = data;
+        } else {
+            assistantResponse = "Извините, я не смог корректно обработать ответ.";
+        }
 
         addMessage(assistantResponse, 'assistant');
+
     } catch (error) {
-        console.error('Error:', error);
-        addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
+        console.error('Primary API Error:', error);
+        
+        // Пробуем альтернативный метод
+        try {
+            const encodedPrompt = encodeURIComponent(prompt);
+            const backupResponse = await fetch(`https://text.pollinations.ai/prompt/${encodedPrompt}`);
+            
+            if (backupResponse.ok) {
+                const textResponse = await backupResponse.text();
+                addMessage(textResponse, 'assistant');
+            } else {
+                // Если и это не сработало, используем прокси
+                const proxyResponse = await fetch('https://api.allorigins.win/raw?url=' + 
+                    encodeURIComponent(`https://text.pollinations.ai/prompt/${encodedPrompt}`));
+                
+                if (proxyResponse.ok) {
+                    const textResponse = await proxyResponse.text();
+                    addMessage(textResponse, 'assistant');
+                } else {
+                    throw new Error('All methods failed');
+                }
+            }
+        } catch (backupError) {
+            console.error('Backup methods failed:', backupError);
+            addMessage('Извините, не удалось получить ответ. Попробуйте еще раз или измените вопрос.', 'assistant');
+        }
     }
 }
         
