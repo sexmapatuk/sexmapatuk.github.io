@@ -223,6 +223,79 @@ button:hover {
     text-align: center;
     font-style: italic;
 }
+
+        /* Стили для анимации печати */
+.typing {
+    overflow: hidden;
+    white-space: pre-wrap;
+    animation: none;
+    display: inline-block;
+    width: 100%;
+}
+
+.typing.animate {
+    animation: typing 2s steps(40, end);
+}
+
+@keyframes typing {
+    from { max-height: 0; }
+    to { max-height: 1000px; }
+}
+
+/* Стили для кнопки пропуска */
+.skip-button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    display: none;
+}
+
+.skip-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Стили для блоков кода */
+.code-block {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    margin: 10px 0;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.code-block pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.copy-button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.copy-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.message {
+    position: relative;
+}
     </style>
 </head>
 <body>
@@ -261,7 +334,10 @@ async function generateText(prompt) {
             },
             body: JSON.stringify({
                 messages: [
-                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { 
+                        role: 'system', 
+                        content: 'You are a helpful assistant. When providing code examples, wrap them in triple backticks (```). Format your responses clearly and maintain proper spacing.' 
+                    },
                     { role: 'user', content: prompt }
                 ],
                 model: 'mistral',
@@ -274,48 +350,14 @@ async function generateText(prompt) {
         }
 
         const data = await response.json();
-        
-        // Проверяем структуру ответа и извлекаем текст
-        let assistantResponse;
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-            assistantResponse = data.choices[0].message.content;
-        } else if (data.response) {
-            assistantResponse = data.response;
-        } else if (typeof data === 'string') {
-            assistantResponse = data;
-        } else {
-            assistantResponse = "Извините, я не смог корректно обработать ответ.";
-        }
+        let assistantResponse = data.choices?.[0]?.message?.content || 
+                              data.response || 
+                              (typeof data === 'string' ? data : 'Извините, я не смог корректно обработать ответ.');
 
         addMessage(assistantResponse, 'assistant');
-
     } catch (error) {
-        console.error('Primary API Error:', error);
-        
-        // Пробуем альтернативный метод
-        try {
-            const encodedPrompt = encodeURIComponent(prompt);
-            const backupResponse = await fetch(`https://text.pollinations.ai/prompt/${encodedPrompt}`);
-            
-            if (backupResponse.ok) {
-                const textResponse = await backupResponse.text();
-                addMessage(textResponse, 'assistant');
-            } else {
-                // Если и это не сработало, используем прокси
-                const proxyResponse = await fetch('https://api.allorigins.win/raw?url=' + 
-                    encodeURIComponent(`https://text.pollinations.ai/prompt/${encodedPrompt}`));
-                
-                if (proxyResponse.ok) {
-                    const textResponse = await proxyResponse.text();
-                    addMessage(textResponse, 'assistant');
-                } else {
-                    throw new Error('All methods failed');
-                }
-            }
-        } catch (backupError) {
-            console.error('Backup methods failed:', backupError);
-            addMessage('Извините, не удалось получить ответ. Попробуйте еще раз или измените вопрос.', 'assistant');
-        }
+        console.error('Error:', error);
+        addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
     }
 }
         
@@ -329,14 +371,78 @@ function addMessage(content, sender, isImage = false) {
         img.className = 'generated-image';
         messageDiv.appendChild(img);
     } else {
-        // Проверяем, не является ли контент объектом или пустым
-        if (typeof content === 'object') {
-            content = JSON.stringify(content);
+        // Создаем контейнер для текста
+        const textContainer = document.createElement('div');
+        textContainer.className = 'typing';
+        
+        // Обработка кода в тексте
+        if (content.includes('```')) {
+            const parts = content.split('```');
+            parts.forEach((part, index) => {
+                if (index % 2 === 0) {
+                    // Обычный текст
+                    if (part.trim()) {
+                        const textPart = document.createElement('div');
+                        textPart.textContent = part;
+                        textContainer.appendChild(textPart);
+                    }
+                } else {
+                    // Код
+                    const codeBlock = document.createElement('div');
+                    codeBlock.className = 'code-block';
+                    
+                    const pre = document.createElement('pre');
+                    const code = document.createElement('code');
+                    code.textContent = part.trim();
+                    pre.appendChild(code);
+                    codeBlock.appendChild(pre);
+                    
+                    // Кнопка копирования
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.textContent = 'Копировать';
+                    copyButton.onclick = () => {
+                        navigator.clipboard.writeText(part.trim());
+                        copyButton.textContent = 'Скопировано!';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Копировать';
+                        }, 2000);
+                    };
+                    codeBlock.appendChild(copyButton);
+                    
+                    textContainer.appendChild(codeBlock);
+                }
+            });
+        } else {
+            textContainer.textContent = content;
         }
-        if (!content || content.trim() === '') {
-            content = 'Извините, произошла ошибка. Попробуйте задать вопрос иначе.';
+        
+        // Добавляем кнопку пропуска для сообщений ассистента
+        if (sender === 'assistant') {
+            const skipButton = document.createElement('button');
+            skipButton.className = 'skip-button';
+            skipButton.textContent = '⏩ Пропустить';
+            skipButton.style.display = 'none';
+            messageDiv.appendChild(skipButton);
+            
+            // Анимация печати
+            setTimeout(() => {
+                textContainer.classList.add('animate');
+                skipButton.style.display = 'block';
+                
+                skipButton.onclick = () => {
+                    textContainer.style.animation = 'none';
+                    skipButton.style.display = 'none';
+                };
+                
+                // Скрыть кнопку после завершения анимации
+                textContainer.addEventListener('animationend', () => {
+                    skipButton.style.display = 'none';
+                });
+            }, 100);
         }
-        messageDiv.textContent = content;
+        
+        messageDiv.appendChild(textContainer);
     }
     
     messagesContainer.appendChild(messageDiv);
