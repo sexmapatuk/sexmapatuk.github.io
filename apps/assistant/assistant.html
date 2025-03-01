@@ -251,55 +251,21 @@ button:hover {
         const userInput = document.getElementById('user-input');
         const loadingIndicator = document.getElementById('loading');
 
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
-
-            addMessage(message, 'user');
-            userInput.value = '';
-            loadingIndicator.style.display = 'block';
-
-            if (message.toLowerCase().includes('покажи') || 
-                message.toLowerCase().includes('нарисуй') || 
-                message.toLowerCase().includes('создай изображение')) {
-                await generateImage(message);
-            } else {
-                await generateText(message);
-            }
-
-            loadingIndicator.style.display = 'none';
-        }
-
-        function addMessage(content, sender, isImage = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            
-            if (isImage) {
-                const img = document.createElement('img');
-                img.src = content;
-                img.className = 'generated-image';
-                messageDiv.appendChild(img);
-            } else {
-                messageDiv.textContent = content;
-            }
-            
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        async function generateText(prompt) {
+async function generateText(prompt) {
     try {
         const response = await fetch('https://text.pollinations.ai/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             body: JSON.stringify({
                 messages: [
                     { role: 'system', content: 'You are a helpful assistant.' },
                     { role: 'user', content: prompt }
                 ],
-                model: 'openai'
+                model: 'mistral',
+                stream: false
             })
         });
 
@@ -308,23 +274,111 @@ button:hover {
         }
 
         const data = await response.json();
-        const assistantResponse = data.choices[0].message.content;
+        
+        // Проверяем структуру ответа и извлекаем текст
+        let assistantResponse;
+        if (data.choices && data.choices[0] && data.choices[0].message) {
+            assistantResponse = data.choices[0].message.content;
+        } else if (data.response) {
+            assistantResponse = data.response;
+        } else if (typeof data === 'string') {
+            assistantResponse = data;
+        } else {
+            assistantResponse = "Извините, я не смог корректно обработать ответ.";
+        }
+
         addMessage(assistantResponse, 'assistant');
+
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Primary API Error:', error);
+        
+        // Пробуем альтернативный метод
         try {
-            const backupResponse = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://text.pollinations.ai/prompt/' + encodeURIComponent(prompt)));
+            const encodedPrompt = encodeURIComponent(prompt);
+            const backupResponse = await fetch(`https://text.pollinations.ai/prompt/${encodedPrompt}`);
+            
             if (backupResponse.ok) {
-                const data = await backupResponse.text();
-                addMessage(data, 'assistant');
+                const textResponse = await backupResponse.text();
+                addMessage(textResponse, 'assistant');
             } else {
-                addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
+                // Если и это не сработало, используем прокси
+                const proxyResponse = await fetch('https://api.allorigins.win/raw?url=' + 
+                    encodeURIComponent(`https://text.pollinations.ai/prompt/${encodedPrompt}`));
+                
+                if (proxyResponse.ok) {
+                    const textResponse = await proxyResponse.text();
+                    addMessage(textResponse, 'assistant');
+                } else {
+                    throw new Error('All methods failed');
+                }
             }
         } catch (backupError) {
-            addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
+            console.error('Backup methods failed:', backupError);
+            addMessage('Извините, не удалось получить ответ. Попробуйте еще раз или измените вопрос.', 'assistant');
         }
     }
 }
+        
+function addMessage(content, sender, isImage = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    if (isImage) {
+        const img = document.createElement('img');
+        img.src = content;
+        img.className = 'generated-image';
+        messageDiv.appendChild(img);
+    } else {
+        // Проверяем, не является ли контент объектом или пустым
+        if (typeof content === 'object') {
+            content = JSON.stringify(content);
+        }
+        if (!content || content.trim() === '') {
+            content = 'Извините, произошла ошибка. Попробуйте задать вопрос иначе.';
+        }
+        messageDiv.textContent = content;
+    }
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+        
+function showLoading() {
+    loadingIndicator.style.display = 'block';
+    loadingIndicator.textContent = 'Генерация ответа...';
+}
+
+function hideLoading() {
+    loadingIndicator.style.display = 'none';
+}
+        
+async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    // Добавляем сообщение пользователя
+    addMessage(message, 'user');
+    userInput.value = '';
+    
+    // Показываем индикатор загрузки
+    showLoading();
+
+    try {
+        if (message.toLowerCase().includes('покажи') || 
+            message.toLowerCase().includes('нарисуй') || 
+            message.toLowerCase().includes('создай изображение')) {
+            await generateImage(message);
+        } else {
+            await generateText(message);
+        }
+    } catch (error) {
+        console.error('Error in sendMessage:', error);
+        addMessage('Произошла ошибка при обработке запроса. Попробуйте еще раз.', 'assistant');
+    } finally {
+        hideLoading();
+    }
+}
+
         async function generateImage(prompt) {
             try {
                 const encodedPrompt = encodeURIComponent(prompt);
