@@ -360,6 +360,48 @@
         .back-to-top.visible {
             opacity: 1;
         }
+
+        .time-info {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin: 20px 0;
+}
+
+.current-time {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.current-date {
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+.teachers-list,
+.classes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.teacher-item,
+.class-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.teacher-item:hover,
+.class-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
     </style>
 </head>
 <body>
@@ -380,6 +422,13 @@
             <a href="#contacts">Контакты</a>
         </div>
     </nav>
+
+    <div class="time-info">
+        <div class="current-time"></div>
+        <div class="current-date"></div>
+        <div class="current-lesson"></div>
+        <div class="remaining-time"></div>
+    </div>
 
     <div class="container">
         <section id="home">
@@ -423,21 +472,13 @@
         </section>
 
         <section id="teachers">
-            <h2>Наши учителя</h2>
-            <div class="card-grid">
-                <div class="card">
-                    <h3>Начальная школа</h3>
-                    <p>20 опытных педагогов</p>
-                </div>
-                <div class="card">
-                    <h3>Средняя школа</h3>
-                    <p>40 профессиональных преподавателей</p>
-                </div>
-                <div class="card">
-                    <h3>Старшая школа</h3>
-                    <p>20 экспертов ЕГЭ</p>
-                </div>
-            </div>
+            <h2>Учителя</h2>
+            <!-- Список учителей будет добавлен здесь -->
+        </section>
+
+        <section id="classes">
+            <h2>Классы</h2>
+            <!-- Список классов будет добавлен здесь -->
         </section>
 
         <section id="contacts">
@@ -492,6 +533,117 @@
     <div class="back-to-top">↑</div>
 
     <script>
+        const DATA = {
+    // Все данные из предоставленного JSON...
+};
+
+// Функция для форматирования времени
+function formatTime(time) {
+    return time.replace(/^(\d):/, '0$1:');
+}
+
+// Функция для получения текущего урока
+function getCurrentLesson() {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    for (let lessonNum in DATA.LESSON_TIMES) {
+        const [start, end] = DATA.LESSON_TIMES[lessonNum].map(time => {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+        });
+        
+        if (currentTime >= start && currentTime <= end) {
+            return {
+                number: lessonNum,
+                start: DATA.LESSON_TIMES[lessonNum][0],
+                end: DATA.LESSON_TIMES[lessonNum][1],
+                remaining: end - currentTime
+            };
+        }
+    }
+    return null;
+}
+
+// Функция для получения дня недели
+function getCurrentDay() {
+    const now = new Date();
+    const dayIndex = now.getDay() - 1; // -1 потому что getDay() возвращает 0-6, где 0 - воскресенье
+    return DATA.DAY_NAMES[dayIndex] || DATA.DAY_NAMES[0];
+}
+
+// Функция для форматирования даты
+function formatDate(date) {
+    const day = date.getDate();
+    const monthIndex = date.getMonth();
+    return `${day} ${DATA.MONTHS2[monthIndex]} ${DATA.YEAR_STR}`;
+}
+
+// Обновление информации на странице
+function updatePageInfo() {
+    const currentLesson = getCurrentLesson();
+    const currentDay = getCurrentDay();
+    const now = new Date();
+    
+    // Обновление времени
+    document.querySelector('.current-time').textContent = 
+        `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    // Обновление даты
+    document.querySelector('.current-date').textContent = formatDate(now);
+    
+    // Обновление информации о текущем уроке
+    if (currentLesson) {
+        document.querySelector('.current-lesson').textContent = 
+            `${DATA.LESSON_STR} ${currentLesson.number} (${currentLesson.start} - ${currentLesson.end})`;
+        document.querySelector('.remaining-time').textContent = 
+            `${DATA.TIME_REMAIN}: ${currentLesson.remaining} ${getMinutesWord(currentLesson.remaining)}`;
+    } else {
+        document.querySelector('.current-lesson').textContent = DATA.NO_LESSONS_STR;
+        document.querySelector('.remaining-time').textContent = '';
+    }
+}
+
+// Функция для правильного склонения слова "минуты"
+function getMinutesWord(minutes) {
+    if (minutes % 10 === 1 && minutes % 100 !== 11) {
+        return DATA.MINUTES1;
+    } else if ([2,3,4].includes(minutes % 10) && ![12,13,14].includes(minutes % 100)) {
+        return DATA.MINUTES2;
+    } else {
+        return DATA.MINUTES3;
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    updatePageInfo();
+    // Обновление каждую минуту
+    setInterval(updatePageInfo, 60000);
+    
+    // Заполнение списка учителей
+    const teachersList = document.createElement('div');
+    teachersList.className = 'teachers-list';
+    Object.entries(DATA.TEACHERS).forEach(([id, name]) => {
+        const teacherElement = document.createElement('div');
+        teacherElement.className = 'teacher-item';
+        teacherElement.textContent = name;
+        teachersList.appendChild(teacherElement);
+    });
+    document.querySelector('#teachers').appendChild(teachersList);
+    
+    // Заполнение списка классов
+    const classesList = document.createElement('div');
+    classesList.className = 'classes-list';
+    Object.entries(DATA.CLASSES).forEach(([id, name]) => {
+        const classElement = document.createElement('div');
+        classElement.className = 'class-item';
+        classElement.textContent = name;
+        classesList.appendChild(classElement);
+    });
+    document.querySelector('#classes').appendChild(classesList);
+});
+        
         // Функция для проверки видимости элемента
         function isElementInViewport(el) {
             const rect = el.getBoundingClientRect();
