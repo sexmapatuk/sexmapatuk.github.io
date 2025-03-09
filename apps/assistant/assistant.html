@@ -296,7 +296,7 @@ button:hover {
 .message {
     position: relative;
 }
-
+        
 .input-container button[title="Очистить историю"] {
     background: rgba(255, 59, 48, 0.6);
     padding: 15px;
@@ -595,53 +595,6 @@ class ChatMemory {
 // Создаем экземпляр памяти
 const chatMemory = new ChatMemory();
 
-// Модифицируем функцию generateText для использования контекста
-async function generateText(prompt) {
-    try {
-        // Получаем последние сообщения для контекста
-        const context = chatMemory.getContext();
-        
-        const response = await fetch('https://text.pollinations.ai/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify({
-                messages: [
-                    { 
-                        role: 'system', 
-                        content: 'Вы ии помощник, ваш разработчик @hinorium из Россия, Якутск; Информация: Школа 3, Якутск; Сайт школы: https://ykt-s3.obr.sakha.gov.ru; Расписание школы: https://raspisanie.nikasoft.ru/57311354.html; Основной язык: Русский.' 
-                    },
-                    ...context, // Добавляем предыдущие сообщения
-                    { role: 'user', content: prompt }
-                ],
-                model: 'mistral',
-                stream: false
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        let assistantResponse = data.choices?.[0]?.message?.content || 
-                              data.response || 
-                              (typeof data === 'string' ? data : 'Извините, я не смог корректно обработать ответ.');
-
-        // Сохраняем сообщение в истории
-        chatMemory.saveMessage(prompt, 'user');
-        chatMemory.saveMessage(assistantResponse, 'assistant');
-
-        addMessage(assistantResponse, 'assistant');
-
-    } catch (error) {
-        console.error('Error:', error);
-        addMessage('Извините, произошла ошибка. Попробуйте еще раз.', 'assistant');
-    }
-}
-
 // Добавляем кнопку очистки истории в интерфейс
 function addClearHistoryButton() {
     const container = document.querySelector('.input-container');
@@ -671,22 +624,6 @@ window.onload = function() {
     } else {
         // Если истории нет, показываем приветственное сообщение
         addMessage('Привет! Я ваш AI-ассистент. Я могу помочь вам с текстовыми ответами и генерацией изображений. Просто напишите свой вопрос или используйте слова "покажи", "нарисуй" или "создай изображение" для генерации изображений.', 'assistant');
-    }
-};
-
-// Модифицируем функцию generateImage для сохранения в истории
-async function generateImage(prompt) {
-    try {
-        const encodedPrompt = encodeURIComponent(prompt);
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
-        
-        // Сохраняем в историю
-        chatMemory.saveMessage(prompt, 'user');
-        chatMemory.saveMessage(imageUrl, 'assistant');
-        
-        addMessage(imageUrl, 'assistant', true);
-    } catch (error) {
-        addMessage('Извините, произошла ошибка при генерации изображения.', 'assistant');
     }
 }
     </script>
