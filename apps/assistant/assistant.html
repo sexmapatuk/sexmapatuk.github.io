@@ -378,7 +378,7 @@ async function generateText(prompt) {
         // Пробуем альтернативный метод
         try {
             const encodedPrompt = encodeURIComponent(prompt);
-            const backupResponse = await fetch(`https://text.pollinations.ai/prompt/${encodedPrompt}`);
+            const backupResponse = await fetch(`https://text.pollinations.ai/prompt/${encodedPrompt}?model=openai-large`);
             
             if (backupResponse.ok) {
                 const textResponse = await backupResponse.text();
@@ -623,7 +623,7 @@ window.onload = function() {
         });
     } else {
         // Если истории нет, показываем приветственное сообщение
-        addMessage('Привет! Я ваш AI-ассистент. Я могу помочь вам с текстовыми ответами и генерацией изображений. Просто напишите свой вопрос или используйте слова "покажи", "нарисуй" или "создай изображение" для генерации изображений.', 'assistant');
+        addMessage('Привет! Я ваш AI-ассистент на базе ChatGPT 4o. Я могу помочь вам с текстовыми ответами и генерацией изображений. Просто напишите свой вопрос или используйте слова "покажи", "нарисуй" или "создай изображение" для генерации изображений.', 'assistant');
     }
 }
     </script>
