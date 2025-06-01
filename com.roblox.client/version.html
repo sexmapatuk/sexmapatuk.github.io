@@ -1,0 +1,19 @@
+<div id="version"></div>
+
+<script>
+fetch('https://apkpure.net/roblox-android/com.roblox.client/download')
+  .then(res => res.text())
+  .then(html => {
+    const match = html.match(/<title>Download Roblox (\d+\.\d+\.\d+) APK for Android/i);
+    if(match) {
+      // Вставляем версию в элемент с id="version"
+      document.getElementById('version').textContent = 'Version: ' + match[1];
+    } else {
+      document.getElementById('version').textContent = 'Version not found';
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById('version').textContent = 'Error loading version';
+  });
+</script>
