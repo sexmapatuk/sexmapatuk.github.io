@@ -333,6 +333,15 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Счетчик контента */
+        .content-counter {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -353,12 +362,14 @@
         </div>
 
         <section id="photos" class="content-section active">
+            <div class="content-counter" id="photos-counter">Загрузка...</div>
             <div class="gallery" id="gallery">
                 <div class="loading">Загрузка фотографий</div>
             </div>
         </section>
 
         <section id="videos" class="content-section">
+            <div class="content-counter" id="videos-counter">Загрузка...</div>
             <div class="video-gallery" id="video-gallery">
                 <div class="loading">Загрузка видео</div>
             </div>
@@ -367,6 +378,13 @@
 
     <script src="https://sexmapatuk.github.io/apps/fancybox/fancybox.umd.js"></script>
     <script>
+        // Конфигурация
+        const CONFIG = {
+            externalMediaUrl: 'https://sexmapatuk.github.io/res/config/external-media.json',
+            localImagesUrl: 'https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/images/models/global-list',
+            localVideosUrl: 'https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/videos/models/global-list'
+        };
+
         // Мобильное меню
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const navMenu = document.getElementById('nav-menu');
@@ -376,23 +394,65 @@
             mobileMenuBtn.textContent = navMenu.classList.contains('active') ? '✕' : '☰';
         });
 
+        // Загрузка внешних медиа из JSON
+        async function loadExternalMedia() {
+            try {
+                const response = await fetch(CONFIG.externalMediaUrl);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Ошибка загрузки внешних медиа:', error);
+                return { videos: [], images: [] };
+            }
+        }
+
         // Загрузка галереи изображений
         const galleryContainer = document.getElementById('gallery');
+        const photosCounter = document.getElementById('photos-counter');
         
         async function loadGallery() {
             try {
                 galleryContainer.innerHTML = '<div class="loading">Загрузка фотографий</div>';
+                photosCounter.textContent = 'Загрузка...';
                 
-                const response = await fetch('https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/images/models/global-list');
-                const data = await response.json();
+                // Загружаем локальные изображения
+                const localResponse = await fetch(CONFIG.localImagesUrl);
+                const localData = await localResponse.json();
+                
+                // Загружаем внешние медиа
+                const externalMedia = await loadExternalMedia();
                 
                 galleryContainer.innerHTML = '';
+                let totalImages = 0;
                 
-                data.forEach(file => {
+                // Добавляем внешние изображения
+                externalMedia.images.forEach(image => {
+                    const anchor = document.createElement('a');
+                    anchor.href = image.src;
+                    anchor.setAttribute('data-fancybox', 'gallery');
+                    anchor.setAttribute('data-caption', image.title || 'Внешнее изображение');
+                    
+                    const img = document.createElement('img');
+                    img.src = image.thumbnail || image.src;
+                    img.className = 'gallery-item';
+                    img.alt = image.title || 'Внешнее изображение';
+                    img.loading = 'lazy';
+                    
+                    // Добавляем индикатор внешнего источника
+                    img.style.border = '2px solid rgba(100, 200, 255, 0.5)';
+                    
+                    anchor.appendChild(img);
+                    galleryContainer.appendChild(anchor);
+                    totalImages++;
+                });
+                
+                // Добавляем локальные изображения
+                localData.forEach(file => {
                     if(file.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
                         const anchor = document.createElement('a');
                         anchor.href = file.download_url;
                         anchor.setAttribute('data-fancybox', 'gallery');
+                        anchor.setAttribute('data-caption', file.name);
                         
                         const img = document.createElement('img');
                         img.src = file.download_url;
@@ -402,91 +462,130 @@
                         
                         anchor.appendChild(img);
                         galleryContainer.appendChild(anchor);
+                        totalImages++;
                     }
                 });
 
-                if (galleryContainer.children.length === 0) {
+                // Обновляем счетчик
+                photosCounter.textContent = `Всего фотографий: ${totalImages} (${externalMedia.images.length} внешних, ${totalImages - externalMedia.images.length} локальных)`;
+
+                if (totalImages === 0) {
                     galleryContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px;">Фотографии не найдены</div>';
+                    photosCounter.textContent = 'Фотографии не найдены';
                 } else {
+                    // Инициализируем Fancybox
                     Fancybox.bind("[data-fancybox]", {
                         loop: true,
                         wheel: false,
+                        Thumbs: {
+                            autoStart: true,
+                        },
+                        Toolbar: {
+                            display: {
+                                left: ["infobar"],
+                                middle: [
+                                    "zoomIn",
+                                    "zoomOut",
+                                    "toggle1to1",
+                                    "rotateCCW",
+                                    "rotateCW",
+                                    "flipX",
+                                    "flipY",
+                                ],
+                                right: ["slideshow", "thumbs", "close"],
+                            },
+                        },
                     });
                 }
             } catch (error) {
                 console.error('Error loading gallery:', error);
                 galleryContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px;">Ошибка загрузки галереи</div>';
+                photosCounter.textContent = 'Ошибка загрузки';
             }
         }
 
         // Загрузка видео
+        const videosCounter = document.getElementById('videos-counter');
+        
         async function loadVideos() {
             const videoGallery = document.getElementById('video-gallery');
             
             try {
                 videoGallery.innerHTML = '<div class="loading">Загрузка видео</div>';
+                videosCounter.textContent = 'Загрузка...';
                 
-                // Добавляем внешнее видео в начало
-                const externalVideoContainer = document.createElement('div');
-                externalVideoContainer.className = 'video-item external-video';
+                // Загружаем внешние медиа
+                const externalMedia = await loadExternalMedia();
                 
-                const externalVideo = document.createElement('video');
-                externalVideo.src = 'https://2ch.life/fet/src/769029/17402632498930.mp4';
-                externalVideo.controls = true;
-                externalVideo.preload = 'metadata';
-                externalVideo.poster = 'https://2ch.life/fet/thumb/769029/17402632498930s.jpg';
-                
-                // Обработка ошибок для внешнего видео
-                externalVideo.addEventListener('error', function(e) {
-                    console.error('Ошибка загрузки внешнего видео:', e);
-                    externalVideoContainer.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.7); text-align: center; flex-direction: column; gap: 10px;">
-                            <div>⚠️ Видео недоступно</div>
-                            <div style="font-size: 12px;">Проверьте подключение к интернету</div>
-                        </div>
-                    `;
-                });
-                
-                externalVideoContainer.appendChild(externalVideo);
                 videoGallery.innerHTML = '';
-                videoGallery.appendChild(externalVideoContainer);
+                let totalVideos = 0;
+                
+                // Добавляем внешние видео
+                externalMedia.videos.forEach(video => {
+                    const videoContainer = document.createElement('div');
+                    videoContainer.className = 'video-item external-video';
+                    
+                    const videoElement = document.createElement('video');
+                    videoElement.src = video.src;
+                    videoElement.controls = true;
+                    videoElement.preload = 'metadata';
+                    if (video.poster) {
+                        videoElement.poster = video.poster;
+                    }
+                    
+                    // Обработка ошибок для внешнего видео
+                    videoElement.addEventListener('error', function(e) {
+                        console.error('Ошибка загрузки внешнего видео:', e);
+                        videoContainer.innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.7); text-align: center; flex-direction: column; gap: 10px;">
+                                <div>⚠️ Видео недоступно</div>
+                                <div style="font-size: 12px;">${video.title || 'Внешнее видео'}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    videoContainer.appendChild(videoElement);
+                    videoGallery.appendChild(videoContainer);
+                    totalVideos++;
+                });
                 
                 // Загружаем локальные видео
-                const response = await fetch('https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/videos/models/global-list');
-                const data = await response.json();
-                
-                data.forEach(file => {
-                    if(file.name.match(/\.(mp4|webm|mov)$/i)) {
-                        const videoContainer = document.createElement('div');
-                        videoContainer.className = 'video-item';
-                        
-                        const video = document.createElement('video');
-                        video.src = file.download_url;
-                        video.controls = true;
-                        video.preload = 'metadata';
-                        
-                        videoContainer.appendChild(video);
-                        videoGallery.appendChild(videoContainer);
-                    }
-                });
+                try {
+                    const response = await fetch(CONFIG.localVideosUrl);
+                    const data = await response.json();
+                    
+                    data.forEach(file => {
+                        if(file.name.match(/\.(mp4|webm|mov)$/i)) {
+                            const videoContainer = document.createElement('div');
+                            videoContainer.className = 'video-item';
+                            
+                            const video = document.createElement('video');
+                            video.src = file.download_url;
+                            video.controls = true;
+                            video.preload = 'metadata';
+                            
+                            videoContainer.appendChild(video);
+                            videoGallery.appendChild(videoContainer);
+                            totalVideos++;
+                        }
+                    });
+                } catch (localError) {
+                    console.log('Локальные видео не найдены или недоступны');
+                }
 
-                if (videoGallery.children.length === 1) {
-                    // Только внешнее видео
-                    const noLocalVideos = document.createElement('div');
-                    noLocalVideos.style.cssText = 'text-align: center; color: rgba(255,255,255,0.7); padding: 40px; grid-column: 1/-1;';
-                    noLocalVideos.textContent = 'Локальные видео не найдены';
-                    videoGallery.appendChild(noLocalVideos);
+                // Обновляем счетчик
+                const localVideosCount = totalVideos - externalMedia.videos.length;
+                videosCounter.textContent = `Всего видео: ${totalVideos} (${externalMedia.videos.length} внешних, ${localVideosCount} локальных)`;
+
+                if (totalVideos === 0) {
+                    videoGallery.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px; grid-column: 1/-1;">Видео не найдены</div>';
+                    videosCounter.textContent = 'Видео не найдены';
                 }
                 
             } catch (error) {
                 console.error('Error loading videos:', error);
-                videoGallery.innerHTML = `
-                    <div class="video-item external-video">
-                        <video src="https://2ch.life/fet/src/769029/17402632498930.mp4" controls preload="metadata" 
-                               poster="https://2ch.life/fet/thumb/769029/17402632498930s.jpg"></video>
-                    </div>
-                    <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px; grid-column: 1/-1;">Ошибка загрузки локальных видео</div>
-                `;
+                videoGallery.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px; grid-column: 1/-1;">Ошибка загрузки видео</div>';
+                videosCounter.textContent = 'Ошибка загрузки';
             }
         }
 
@@ -521,7 +620,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadGallery();
             // Автообновление галереи каждые 5 минут
-            setInterval(loadGallery, 300000);
+            setInterval(() => {
+                loadGallery();
+                // Если активна секция видео, обновляем и её
+                if (document.getElementById('videos').classList.contains('active')) {
+                    loadVideos();
+                }
+            }, 300000);
         });
     </script>
 </body>
