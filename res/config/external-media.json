@@ -13,7 +13,21 @@
       "src": "https://2ch.life/fet/src/769029/17265089222910.mp4",
       "poster": "https://2ch.life/fet/thumb/769029/17265089222910s.jpg",
       "type": "external"
-    }
+    },
+    {
+      "id": "video_003", 
+      "title": "Внешнее видео 3",
+      "src": "https://2ch.life/fet/src/769029/17282710822320.mp4",
+      "poster": "https://2ch.life/fet/thumb/769029/17282710822320s.jpg",
+      "type": "external"
+    },
+        {
+      "id": "video_004", 
+      "title": "Внешнее видео 4",
+      "src": "https://2ch.life/fet/src/769029/17340754288120.mp4",
+      "poster": "https://2ch.life/fet/thumb/769029/17340754288120s.jpg",
+      "type": "external"
+    },
   ],
   "images": [
     {
