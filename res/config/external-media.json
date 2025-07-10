@@ -1,0 +1,27 @@
+{
+  "videos": [
+    {
+      "id": "video_001",
+      "title": "Внешнее видео 1",
+      "src": "https://2ch.life/fet/src/769029/17402632498930.mp4",
+      "poster": "https://2ch.life/fet/thumb/769029/17402632498930s.jpg",
+      "type": "external"
+    },
+    {
+      "id": "video_002", 
+      "title": "Внешнее видео 2",
+      "src": "https://2ch.life/fet/src/769029/17265089222910.mp4",
+      "poster": "https://2ch.life/fet/thumb/769029/17265089222910s.jpg",
+      "type": "external"
+    }
+  ],
+  "images": [
+    {
+      "id": "img_001",
+      "title": "Внешнее изображение 1",
+      "src": "https://example.com/image1.jpg",
+      "thumbnail": "https://example.com/image1_thumb.jpg",
+      "type": "external"
+    }
+  ]
+}
