@@ -416,8 +416,8 @@
                 photosCounter.textContent = 'Загрузка...';
                 
                 // Загружаем локальные изображения
-                const localResponse = await fetch(CONFIG.localImagesUrl);
-                const localData = await localResponse.json();
+                // const localResponse = await fetch(CONFIG.localImagesUrl);
+                // const localData = await localResponse.json();
                 
                 // Загружаем внешние медиа
                 const externalMedia = await loadExternalMedia();
@@ -447,24 +447,24 @@
                 });
                 
                 // Добавляем локальные изображения
-                localData.forEach(file => {
-                    if(file.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                        const anchor = document.createElement('a');
-                        anchor.href = file.download_url;
-                        anchor.setAttribute('data-fancybox', 'gallery');
-                        anchor.setAttribute('data-caption', file.name);
+                // localData.forEach(file => {
+                //     if(file.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                //         const anchor = document.createElement('a');
+                //         anchor.href = file.download_url;
+                //         anchor.setAttribute('data-fancybox', 'gallery');
+                //         anchor.setAttribute('data-caption', file.name);
                         
-                        const img = document.createElement('img');
-                        img.src = file.download_url;
-                        img.className = 'gallery-item';
-                        img.alt = file.name;
-                        img.loading = 'lazy';
+                //         const img = document.createElement('img');
+                //         img.src = file.download_url;
+                //         img.className = 'gallery-item';
+                //         img.alt = file.name;
+                //         img.loading = 'lazy';
                         
-                        anchor.appendChild(img);
-                        galleryContainer.appendChild(anchor);
-                        totalImages++;
-                    }
-                });
+                //         anchor.appendChild(img);
+                //         galleryContainer.appendChild(anchor);
+                //         totalImages++;
+                //     }
+                // });
 
                 // Обновляем счетчик
                 photosCounter.textContent = `Всего фотографий: ${totalImages} (${externalMedia.images.length} внешних, ${totalImages - externalMedia.images.length} локальных)`;
@@ -550,28 +550,28 @@
                 });
                 
                 // Загружаем локальные видео
-                try {
-                    const response = await fetch(CONFIG.localVideosUrl);
-                    const data = await response.json();
+                // try {
+                //     const response = await fetch(CONFIG.localVideosUrl);
+                //     const data = await response.json();
                     
-                    data.forEach(file => {
-                        if(file.name.match(/\.(mp4|webm|mov)$/i)) {
-                            const videoContainer = document.createElement('div');
-                            videoContainer.className = 'video-item';
+                //     data.forEach(file => {
+                //         if(file.name.match(/\.(mp4|webm|mov)$/i)) {
+                //             const videoContainer = document.createElement('div');
+                //             videoContainer.className = 'video-item';
                             
-                            const video = document.createElement('video');
-                            video.src = file.download_url;
-                            video.controls = true;
-                            video.preload = 'metadata';
+                //             const video = document.createElement('video');
+                //             video.src = file.download_url;
+                //             video.controls = true;
+                //             video.preload = 'metadata';
                             
-                            videoContainer.appendChild(video);
-                            videoGallery.appendChild(videoContainer);
-                            totalVideos++;
-                        }
-                    });
-                } catch (localError) {
-                    console.log('Локальные видео не найдены или недоступны');
-                }
+                //             videoContainer.appendChild(video);
+                //             videoGallery.appendChild(videoContainer);
+                //             totalVideos++;
+                //         }
+                //     });
+                // } catch (localError) {
+                //     console.log('Локальные видео не найдены или недоступны');
+                // }
 
                 // Обновляем счетчик
                 const localVideosCount = totalVideos - externalMedia.videos.length;
