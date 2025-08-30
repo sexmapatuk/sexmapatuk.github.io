@@ -382,7 +382,7 @@
         const CONFIG = {
             externalMediaUrl: 'https://sexmapatuk.github.io/res/config/external-media.json',
             // localImagesUrl: 'https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/images/models/global-list',
-            // localVideosUrl: 'https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/videos/models/global-list'
+            localVideosUrl: 'https://api.github.com/repos/sexmapatuk/sexmapatuk.github.io/contents/res/videos/models/global-list'
         };
 
         // Мобильное меню
@@ -550,28 +550,28 @@
                 });
                 
                 // Загружаем локальные видео
-                // try {
-                //     const response = await fetch(CONFIG.localVideosUrl);
-                //     const data = await response.json();
+                try {
+                    const response = await fetch(CONFIG.localVideosUrl);
+                    const data = await response.json();
                     
-                //     data.forEach(file => {
-                //         if(file.name.match(/\.(mp4|webm|mov)$/i)) {
-                //             const videoContainer = document.createElement('div');
-                //             videoContainer.className = 'video-item';
+                    data.forEach(file => {
+                        if(file.name.match(/\.(mp4|webm|mov)$/i)) {
+                            const videoContainer = document.createElement('div');
+                            videoContainer.className = 'video-item';
                             
-                //             const video = document.createElement('video');
-                //             video.src = file.download_url;
-                //             video.controls = true;
-                //             video.preload = 'metadata';
+                            const video = document.createElement('video');
+                            video.src = file.download_url;
+                            video.controls = true;
+                            video.preload = 'metadata';
                             
-                //             videoContainer.appendChild(video);
-                //             videoGallery.appendChild(videoContainer);
-                //             totalVideos++;
-                //         }
-                //     });
-                // } catch (localError) {
-                //     console.log('Локальные видео не найдены или недоступны');
-                // }
+                            videoContainer.appendChild(video);
+                            videoGallery.appendChild(videoContainer);
+                            totalVideos++;
+                        }
+                    });
+                } catch (localError) {
+                    console.log('Локальные видео не найдены или недоступны');
+                }
 
                 // Обновляем счетчик
                 const localVideosCount = totalVideos - externalMedia.videos.length;
